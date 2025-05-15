@@ -1,245 +1,256 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-
-import { Button } from "@/components/ui/button";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/components/ui/use-toast";
-import { Label } from "@/components/ui/label";
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
+import Navbar from "@/components/layout/Navbar";
 
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-
-const formSchema = z.object({
-  firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
-  lastName: z.string().min(2, { message: "Last name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
-  confirmPassword: z.string().min(8, { message: "Please confirm your password." }),
-  university: z.string().min(2, { message: "Please enter your university name." }),
-  studentId: z.string().min(2, { message: "Student ID is required." }),
-  bio: z.string().min(10, { message: "Bio must be at least 10 characters." }).max(500),
-  skills: z.string().min(2, { message: "Please list at least one skill." }),
-  serviceType: z.enum(["tutoring", "writing", "design", "programming", "other"], {
-    required_error: "Please select a service type.",
-  }),
-  agreeTerms: z.literal(true, {
-    errorMap: () => ({ message: "You must agree to the terms and conditions." }),
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+// Define schemas for each step
+const personalInfoSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
+  email: z.string().email(),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const academicInfoSchema = z.object({
+  university: z.string().min(2, "University name is required"),
+  major: z.string().min(2, "Major is required"),
+  studentId: z.string().min(2, "Student ID is required"),
+  graduationYear: z.string().regex(/^\d{4}$/, "Please enter a valid year (e.g. 2025)"),
+});
+
+const serviceInfoSchema = z.object({
+  serviceCategory: z.string().min(1, "Please select a service category"),
+  skills: z.string().min(3, "Please list your skills"),
+  bio: z.string().min(30, "Bio must be at least 30 characters"),
+});
 
 const RegisterProvider = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const totalSteps = 3;
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    university: '',
+    major: '',
+    studentId: '',
+    graduationYear: '',
+    serviceCategory: '',
+    skills: '',
+    bio: '',
+  });
   
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const personalForm = useForm<z.infer<typeof personalInfoSchema>>({
+    resolver: zodResolver(personalInfoSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      university: "",
-      studentId: "",
-      bio: "",
-      skills: "",
-      serviceType: "tutoring",
-      agreeTerms: false,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
     },
   });
 
-  const onSubmit = (values: FormValues) => {
-    // In a real application, you would submit this data to your backend
-    console.log(values);
-    toast({
-      title: "Registration Submitted",
-      description: "Your provider account request has been submitted for approval.",
-    });
-    setTimeout(() => {
-      navigate("/");
-    }, 2000);
-  };
+  const academicForm = useForm<z.infer<typeof academicInfoSchema>>({
+    resolver: zodResolver(academicInfoSchema),
+    defaultValues: {
+      university: formData.university,
+      major: formData.major,
+      studentId: formData.studentId,
+      graduationYear: formData.graduationYear,
+    },
+  });
 
-  const nextStep = async () => {
-    // Validate current step fields before proceeding
-    if (step === 1) {
-      const result = await form.trigger(['firstName', 'lastName', 'email', 'password', 'confirmPassword']);
-      if (!result) return;
-    } else if (step === 2) {
-      const result = await form.trigger(['university', 'studentId', 'bio']);
-      if (!result) return;
-    }
+  const serviceForm = useForm<z.infer<typeof serviceInfoSchema>>({
+    resolver: zodResolver(serviceInfoSchema),
+    defaultValues: {
+      serviceCategory: formData.serviceCategory,
+      skills: formData.skills,
+      bio: formData.bio,
+    },
+  });
+  
+  const goToNextStep = () => {
+    setStep(step + 1);
+  };
+  
+  const goToPreviousStep = () => {
+    setStep(step - 1);
+  };
+  
+  const submitPersonalInfo = (data: z.infer<typeof personalInfoSchema>) => {
+    setFormData({ ...formData, ...data });
+    goToNextStep();
+  };
+  
+  const submitAcademicInfo = (data: z.infer<typeof academicInfoSchema>) => {
+    setFormData({ ...formData, ...data });
+    goToNextStep();
+  };
+  
+  const submitServiceInfo = (data: z.infer<typeof serviceInfoSchema>) => {
+    // Final submission with all data
+    const finalData = { ...formData, ...data };
+    console.log("Form submitted with data:", finalData);
     
-    if (step < totalSteps) {
-      setStep(step + 1);
-    }
+    // Show success toast
+    toast({
+      title: "Registration successful!",
+      description: "Your provider account has been created.",
+    });
+    
+    // Redirect to profile page
+    setTimeout(() => {
+      navigate("/profile");
+    }, 1500);
   };
 
-  const prevStep = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
+  // Define step titles and descriptions
+  const steps = [
+    {
+      title: "Personal Information",
+      description: "Provide your contact details",
+    },
+    {
+      title: "Academic Information",
+      description: "Tell us about your educational background",
+    },
+    {
+      title: "Service Information",
+      description: "Share details about the services you'll offer",
+    },
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="flex-grow pt-16 bg-gray-50">
-        <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow rounded-lg p-6 md:p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Become a Provider</h1>
-            <p className="text-gray-600 mb-6">
-              Join our marketplace and start offering your services to clients looking for student talents.
-            </p>
-
-            {/* Progress indicator */}
-            <div className="relative mb-8">
-              <div className="flex items-center justify-between mb-2">
-                {Array.from({ length: totalSteps }).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      i + 1 <= step ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'
-                    }`}
-                  >
-                    {i + 1}
-                  </div>
-                ))}
-              </div>
-              <div className="h-1 bg-gray-200 absolute top-4 left-0 right-0 -z-10 rounded-full">
-                <div 
-                  className="h-1 bg-indigo-600 rounded-full transition-all" 
-                  style={{ width: `${((step - 1) / (totalSteps - 1)) * 100}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-sm text-gray-600">Basic Info</span>
-                <span className="text-sm text-gray-600">Academic Profile</span>
-                <span className="text-sm text-gray-600">Service Details</span>
-              </div>
-            </div>
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {step === 1 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Personal Information</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
+      <div className="container mx-auto px-4 py-24">
+        <Card className="max-w-lg mx-auto">
+          <CardHeader>
+            <CardTitle>Become a Service Provider</CardTitle>
+            <CardDescription>
+              Step {step} of 3: {steps[step - 1].description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Step 1: Personal Information */}
+            {step === 1 && (
+              <Form {...personalForm}>
+                <form onSubmit={personalForm.handleSubmit(submitPersonalInfo)} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
-                      control={form.control}
-                      name="email"
+                      control={personalForm.control}
+                      name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Address</FormLabel>
+                          <FormLabel>First Name</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="you@university.edu" {...field} />
+                            <Input placeholder="John" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
                     <FormField
-                      control={form.control}
-                      name="password"
+                      control={personalForm.control}
+                      name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>Last Name</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <Input placeholder="Doe" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                )}
-                
-                {step === 2 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Academic Information</h2>
-                    
+                  
+                  <FormField
+                    control={personalForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="john.doe@university.edu" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={personalForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(123) 456-7890" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button type="submit">Continue</Button>
+                  </div>
+                </form>
+              </Form>
+            )}
+            
+            {/* Step 2: Academic Information */}
+            {step === 2 && (
+              <Form {...academicForm}>
+                <form onSubmit={academicForm.handleSubmit(submitAcademicInfo)} className="space-y-6">
+                  <FormField
+                    control={academicForm.control}
+                    name="university"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>University/College</FormLabel>
+                        <FormControl>
+                          <Input placeholder="State University" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={academicForm.control}
+                    name="major"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Major/Field of Study</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Computer Science" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
-                      control={form.control}
-                      name="university"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>University/Institution</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Stanford University" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
+                      control={academicForm.control}
                       name="studentId"
                       render={({ field }) => (
                         <FormItem>
@@ -251,140 +262,122 @@ const RegisterProvider = () => {
                         </FormItem>
                       )}
                     />
-                    
                     <FormField
-                      control={form.control}
-                      name="bio"
+                      control={academicForm.control}
+                      name="graduationYear"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>About You</FormLabel>
+                          <FormLabel>Graduation Year</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Tell potential clients about yourself, your experience, and why they should hire you."
-                              className="min-h-[120px]"
-                              {...field}
-                            />
+                            <Input placeholder="2025" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                )}
-
-                {step === 3 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Service Information</h2>
-                    
-                    <FormField
-                      control={form.control}
-                      name="skills"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Skills</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Programming, design, writing, etc. (comma separated)"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="serviceType"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel>What type of services will you provide?</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="grid grid-cols-1 md:grid-cols-2 gap-2"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="tutoring" id="tutoring" />
-                                <Label htmlFor="tutoring">Tutoring</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="writing" id="writing" />
-                                <Label htmlFor="writing">Writing & Translation</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="design" id="design" />
-                                <Label htmlFor="design">Design & Creative</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="programming" id="programming" />
-                                <Label htmlFor="programming">Programming & Tech</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="other" id="other" />
-                                <Label htmlFor="other">Other</Label>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="agreeTerms"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              I agree to the <a href="/terms" className="text-indigo-600 hover:text-indigo-500">Terms of Service</a> and <a href="/privacy" className="text-indigo-600 hover:text-indigo-500">Privacy Policy</a>
-                            </FormLabel>
-                            <FormMessage />
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-
-                <div className="flex justify-between pt-4">
-                  {step > 1 ? (
-                    <Button 
-                      type="button" 
-                      onClick={prevStep}
-                      variant="outline"
-                    >
-                      Previous
-                    </Button>
-                  ) : <div></div>}
                   
-                  {step < totalSteps ? (
-                    <Button 
-                      type="button" 
-                      onClick={nextStep}
-                    >
-                      Next Step
+                  <div className="flex justify-between">
+                    <Button type="button" variant="outline" onClick={goToPreviousStep}>
+                      Back
                     </Button>
-                  ) : (
-                    <Button type="submit">
-                      Submit Application
+                    <Button type="submit">Continue</Button>
+                  </div>
+                </form>
+              </Form>
+            )}
+            
+            {/* Step 3: Service Information */}
+            {step === 3 && (
+              <Form {...serviceForm}>
+                <form onSubmit={serviceForm.handleSubmit(submitServiceInfo)} className="space-y-6">
+                  <FormField
+                    control={serviceForm.control}
+                    name="serviceCategory"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Service Category</FormLabel>
+                        <FormControl>
+                          <select 
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            {...field}
+                          >
+                            <option value="">Select a category</option>
+                            <option value="design">Design & Creative</option>
+                            <option value="programming">Programming & Tech</option>
+                            <option value="writing">Writing & Translation</option>
+                            <option value="data">Data & Analytics</option>
+                            <option value="marketing">Digital Marketing</option>
+                            <option value="tutoring">Tutoring & Education</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={serviceForm.control}
+                    name="skills"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Skills (comma separated)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. JavaScript, React, UI Design" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={serviceForm.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bio / About Me</FormLabel>
+                        <FormControl>
+                          <textarea 
+                            className="flex h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Tell potential clients about yourself and your expertise..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-between">
+                    <Button type="button" variant="outline" onClick={goToPreviousStep}>
+                      Back
                     </Button>
-                  )}
+                    <Button type="submit">Complete Registration</Button>
+                  </div>
+                </form>
+              </Form>
+            )}
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <div className="flex justify-between w-full">
+              {[1, 2, 3].map((stepNumber) => (
+                <div
+                  key={stepNumber}
+                  className={`flex-1 px-2 py-1 mx-1 text-center text-xs rounded-md ${
+                    step === stepNumber
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : step > stepNumber
+                      ? "bg-primary/20 text-primary"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  Step {stepNumber}
                 </div>
-              </form>
-            </Form>
-          </div>
-        </div>
-      </main>
-      <Footer />
+              ))}
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -7,6 +7,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import RegisterProvider from "./pages/RegisterProvider";
+import StudentProfile from "./pages/StudentProfile";
+import CreateGig from "./pages/CreateGig";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +22,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/register" element={<RegisterProvider />} />
+          <Route path="/profile" element={<StudentProfile />} />
+          <Route path="/create-gig" element={<CreateGig />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
