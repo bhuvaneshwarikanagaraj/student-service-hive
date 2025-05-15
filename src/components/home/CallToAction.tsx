@@ -16,7 +16,7 @@ const CallToAction = () => {
               Whether you're looking to offer your skills or need help with a project, join our community today.
             </p>
             <div className="mt-8 flex space-x-4">
-              <Link to="/register?role=seller">
+              <Link to="/register">
                 <Button className="bg-white text-indigo-700 hover:bg-indigo-50">
                   Become a Provider
                 </Button>
