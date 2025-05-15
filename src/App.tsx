@@ -10,6 +10,12 @@ import RegisterProvider from "./pages/RegisterProvider";
 import StudentProfile from "./pages/StudentProfile";
 import CreateGig from "./pages/CreateGig";
 import Dashboard from "./pages/Dashboard";
+import Services from "./pages/Services";
+import GigDetail from "./pages/GigDetail";
+import GigEdit from "./pages/GigEdit";
+import HowItWorks from "./pages/HowItWorks";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +31,13 @@ const App = () => (
           <Route path="/profile" element={<StudentProfile />} />
           <Route path="/create-gig" element={<CreateGig />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:id" element={<GigDetail />} />
+          <Route path="/gig/:id" element={<GigDetail />} />
+          <Route path="/gig/:id/edit" element={<GigEdit />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
